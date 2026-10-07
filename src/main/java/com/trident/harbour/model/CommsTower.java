@@ -1,0 +1,32 @@
+package com.trident.harbour.model;
+
+public class CommsTower extends Asset {
+
+    public CommsTower(int id, String name, int criticality, double repairHours, double healthScore) {
+        super(id, name, criticality, repairHours, healthScore);
+    }
+
+    @Override
+    public AssetType getType() {
+        return AssetType.COMMS_TOWER;
+    }
+
+    @Override
+    public String getServiceProvided() {
+        return "Communications";
+    }
+
+    @Override
+    public double getFailureThreshold() {
+        return 40.0;
+    }
+
+    @Override
+    public double getVulnerability(HazardType hazard) {
+        return switch (hazard) {
+            case FLOOD -> 0.4;
+            case POWER_OUTAGE -> 0.3;
+            case EQUIPMENT_FAILURE -> 0.5;
+        };
+    }
+}
