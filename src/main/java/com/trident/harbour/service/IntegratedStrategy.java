@@ -11,17 +11,18 @@ public class IntegratedStrategy implements RecoveryStrategy {
 
     @Override
     public Optional<Integer> chooseNext(HarbourGraph graph,
-                                        Collection<Integer> failedIds,
+                                        Collection<Integer> candidates,
+                                        Collection<Integer> allUnrepaired,
                                         Map<Integer, Double> confidenceByAsset) {
-        if (failedIds.isEmpty()) {
+        if (candidates.isEmpty()) {
             return Optional.empty();
         }
         DependencyAnalyzer analyzer = new DependencyAnalyzer(graph);
-        List<Integer> failed = List.copyOf(failedIds);
+        List<Integer> failed = List.copyOf(allUnrepaired);
 
         Integer best = null;
         double bestPriority = -1.0;
-        for (int id : failed) {
+        for (int id : candidates) {
             double confidence = confidenceByAsset.getOrDefault(id, 0.0);
             int unlocked = analyzer.criticalityUnlocked(id, failed);
             double p = PriorityScorer.priority(unlocked, confidence,

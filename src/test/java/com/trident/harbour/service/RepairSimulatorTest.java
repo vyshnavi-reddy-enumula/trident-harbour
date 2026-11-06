@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,4 +54,19 @@ class RepairSimulatorTest {
     void noFaultsMeansNoTasks() {
         assertTrue(simulator.simulate(graph, new IntegratedStrategy(), List.of(), Map.of()).isEmpty());
     }
+
+    @Test
+void twoCrewsOnTwoFaultsFinishTogetherForBothStrategies() {
+    // same setup as your existing double-fault test
+    for (RecoveryStrategy s : List.of(new IntegratedStrategy(), new BaselineStrategy())) {
+        List<RepairTask> tasks = new RepairSimulator().simulate(graph, s, failed, confidence, 2);
+        assertEquals(2, tasks.size());
+        for (RepairTask t : tasks) {
+            assertEquals(0.0, t.getStartTime(), 1e-9);
+            assertEquals(4.0, t.getEndTime(), 1e-9);
+            assertFalse(t.isWasted());
+        }
+        assertNotEquals(tasks.get(0).getCrewId(), tasks.get(1).getCrewId());
+    }
+}
 }

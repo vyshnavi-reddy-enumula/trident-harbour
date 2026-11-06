@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRIDENT dashboard</title>
+<style>
+:root{--bg:#0b1f33;--pn:#112b45;--ln:#2a4a68;--tx:#e6edf5;--mu:#9bb1c6;--ok:#2ea36b;--fl:#e5484d;--rp:#f5a623;--cs:#5f7185;--ac:#4aa3df}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Segoe UI",Arial,sans-serif}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid var(--ln)}
+h1{margin:0;font-size:22px;letter-spacing:.08em}header p{margin:0;color:var(--mu)}
+nav button,.bar button{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:7px 14px;cursor:pointer;font:inherit}
+nav button.on,.bar button.on{background:var(--ac);border-color:var(--ac);color:#06121f;font-weight:600}
+main{padding:16px 22px;max-width:1400px;margin:auto}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px}
+select{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:7px;font:inherit;max-width:100%}
+input[type=range]{flex:1;min-width:180px}
+input[type=number]{width:64px;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:5px;font:inherit}
+.delta{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+article{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:12px}
+article h2{margin:0 0 8px;font-size:16px}
+.m{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.m div{background:var(--bg);border-radius:6px;padding:6px 10px;min-width:100px}
+.m b{display:block;font-size:18px}.m span{color:var(--mu);font-size:12px}
+svg{width:100%;height:auto;display:block}
+.e{stroke:#3b5a78;stroke-width:2}.bk{stroke-dasharray:5 4}
+.n circle{stroke:#06121f;stroke-width:2}.n .id{fill:#06121f;font-weight:700;text-anchor:middle;font-size:13px}.n .lb{fill:var(--tx);text-anchor:middle;font-size:11px}
+.ok circle{fill:var(--ok)}.flt circle{fill:var(--fl)}.rep circle{fill:var(--rp)}.cas circle{fill:var(--cs)}
+.blk circle{fill:var(--cs);stroke:var(--fl);stroke-width:3;stroke-dasharray:4 3}
+.gt .lb{fill:var(--mu);font-size:11px}.gt .r{fill:var(--ac)}.gt .w{fill:var(--fl)}.gt .bt{fill:#06121f;font-size:11px;font-weight:600}
+.gt .cur{stroke:var(--rp);stroke-width:2}
+.leg{display:flex;flex-wrap:wrap;gap:14px;color:var(--mu);font-size:12px;margin-top:10px}
+.leg i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.note{color:var(--mu);font-size:12.5px}.card{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:16px}.cg text{font-size:11px;fill:var(--mu)}
+</style></head><body>
+<header><div><h1>TRIDENT</h1><p>Cascade-aware recovery planning for a simulated naval harbour</p></div>
+<nav><button class="on" data-v="replay">Replay</button> <button data-v="whatif">What-if (live)</button> <button data-v="results">Experiment results</button></nav></header>
+
+<main id="replay">
+<div class="bar"><label>Scenario <select id="sel"></select></label><span>Crews <span id="crews"></span></span>
+<button id="play">Play</button><input id="tm" type="range" min="0" max="10" step="0.25" value="0"><b id="tl">t = 0 h</b></div>
+<div class="delta" id="delta"></div>
+<div class="grid"><article id="p0"></article><article id="p1"></article></div>
+<div class="leg"><span><i style="background:var(--ok)"></i>operational</span><span><i style="background:var(--fl)"></i>faulted, waiting</span>
+<span><i style="background:var(--rp)"></i>crew repairing</span><span><i style="background:var(--cs)"></i>down only because of an upstream fault</span>
+<span><i style="background:var(--cs);border:2px dashed var(--fl)"></i>repaired but still blocked (wasted effort)</span></div>
+</main>
+
+<main id="whatif" hidden>
+<div class="card"><h2>What-if: fail assets and watch both planners react</h2>
+<p class="note">Runs your real Java simulator through HarbourServer. Click the assets that fail, set how damaged each is (the baseline repairs the most damaged first), pick crews, run.</p>
+<div class="bar"><button id="wpa">Preset: worked example</button><button id="wpb">Preset: power chain (failure mode)</button></div>
+<div class="bar" id="wchips"></div><div class="bar" id="wdmg"></div>
+<div class="bar"><span>Crews <span id="wcrews"></span></span><button id="wrun">Run both planners</button><span id="wstat" class="note"></span></div></div>
+<div class="bar"><button id="wplay">Play</button><input id="wtm" type="range" min="0" max="10" step="0.25" value="0"><b id="wtl">t = 0 h</b></div>
+<div class="delta" id="wdelta" hidden></div>
+<div class="grid"><article id="w0"></article><article id="w1"></article></div>
+<div class="delta" id="wrule" hidden style="margin-top:12px"></div>
+</main>
+
+<main id="results" hidden>
+<div class="card"><h2>Weighted downtime: integrated vs baseline</h2><p class="note">Improvement in mean weighted downtime (%, positive = integrated better), seeds 1 to 100 per configuration. M = MEDIUM, H = HIGH severity. EQUIPMENT at MEDIUM produced no usable runs.</p><div id="c1"></div></div>
+<div class="card"><h2>Ablation, 1 crew: is it the scheduling rule or the dependency graph?</h2><p class="note">"Rule only" = criticality / repair hours with no dependency awareness. Positive = better than baseline. In every power-involving row the rule alone is worse than the baseline (it defers the long-repair Main Grid); dependency awareness fixes that. In Flood and Equipment rows most of the gain comes from the rule itself.</p><div id="c2"></div></div>
+<p class="note">Simulated harbour. All parameters are invented assumptions. Time to restore critical services showed no consistent gain (within about 4.5%). Confidence is fixed at 1.0, so confidence scoring is not part of this experiment.</p>
+</main>
+
+<script src="dashboard_data.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+ ['replay','whatif','results'].forEach(v=>$(v).hidden=b.dataset.v!==v);});
+const SH={1:'Main Grid',2:'Backup Gen',3:'Substation A',4:'Pump 1',5:'Pump 2',6:'Dock Pump',7:'Drydock',8:'Comms',9:'Control',10:'Crane 1',11:'Crane 2',12:'Berth 1',13:'Berth 2',14:'Fuel Jetty',15:'Access'};
+const ROW={1:0,2:0,3:1,4:2,10:2,5:2,11:2,6:2,8:2,15:3,12:3,13:3,7:3,9:3,14:4};
+const X={1:200,2:460,3:330,4:70,10:170,5:270,11:370,6:470,8:570,15:40,12:120,13:320,7:470,9:570,14:320};
+const Y=id=>40+80*ROW[id];
+
+/* ---------- experiment results (from results_summary.csv and results_ablation.csv) ---------- */
+const CFG=['Flood M','Flood H','Power M','Power H','Equip H','Flood+Power M','Flood+Power H','Flood+Equip M','Flood+Equip H','Power+Equip M','Power+Equip H'];
+const IMPR=[[9.1,35.8,4.8,-2.9,36.7,10.3,10.7,36.8,35.6,-2.4,7.1],[2.7,19.5,4.6,0.5,18.6,11.8,11.0,26.8,34.0,3.8,5.1],[0,8.9,0,0,3.9,5.2,8.2,16.7,30.4,0.2,1.3]];
+const ABL=[[138.9,131.8,126.3],[370.9,253.8,238.1],[686.8,708.1,653.5],[710.3,775.2,730.9],[369.4,243.2,233.8],[793.6,942.9,711.8],[1348.1,2086.9,1204.4],[797.5,528.9,503.9],[2287.6,2217.4,1473.1],[795.8,921.4,815.3],[1322.3,1711.6,1228.6]];
+function bars(el,labels,series,names,cols){
+ const W=900,H=330,l=36,b=95,t=26,r=80,all=series.flat(),mx=Math.max(...all,1),mn=Math.min(...all,0);
+ const y=v=>t+(mx-v)/((mx-mn)||1)*(H-t-b),gw=(W-l-r)/labels.length,bw=gw*.8/series.length;
+ let s=`<svg viewBox="0 0 ${W} ${H}" class="cg"><line x1="${l}" x2="${W-r}" y1="${y(0)}" y2="${y(0)}" stroke="#5f7185"/>`;
+ names.forEach((n,k)=>s+=`<rect x="${l+k*190}" y="4" width="11" height="11" fill="${cols[k]}"/><text x="${l+k*190+16}" y="14">${n}</text>`);
+ labels.forEach((lb,i)=>{series.forEach((sr,k)=>{const v=sr[i],x=l+i*gw+gw*.1+k*bw,y0=y(0),y1=y(v);
+  s+=`<rect x="${x}" y="${Math.min(y0,y1)}" width="${bw-1}" height="${Math.abs(y1-y0)}" fill="${cols[k]}"/><text x="${x+bw/2}" y="${v>=0?y1-3:y1+11}" text-anchor="middle" style="font-size:9px">${v.toFixed(0)}</text>`});
+  s+=`<text transform="translate(${l+i*gw+gw/2},${H-b+14}) rotate(35)">${lb}</text>`});
+ el.innerHTML=s+'</svg>';}
+const COL=['#9ecae1','#4292c6','#08519c'];
+bars($('c1'),CFG,IMPR,['1 crew','2 crews','3 crews'],COL);
+bars($('c2'),CFG,[ABL.map(a=>(a[0]-a[1])/a[0]*100),ABL.map(a=>(a[0]-a[2])/a[0]*100)],['Rule only (no dependencies)','Integrated'],['#f5a623','#2ea36b']);
+
+/* ---------- replay ---------- */
+if(!window.DASH){document.querySelector('#replay').innerHTML='<p>dashboard_data.js was not found next to this file. Run DashboardExporter and put dashboard_data.js in the same folder as dashboard.html.</p>';}
+else{
+const D=window.DASH,A={};D.harbour.assets.forEach(a=>A[a.id]=a);
+const labels=[...new Set(D.runs.map(r=>r.label))];
+$('sel').innerHTML=labels.map(l=>`<option>${l}</option>`).join('');
+let crews=1,timer=null;
+const runs=()=>D.runs.filter(r=>r.label===$('sel').value);
+const cur=()=>runs().find(r=>r.crews===crews)||runs()[0];
+const tmax=r=>Math.max(...['BASELINE','INTEGRATED'].map(k=>Math.max(...r.strategies[k].tasks.map(t=>t.end))));
+const stAt=(S,t)=>{let s=S.states[0];S.states.forEach(x=>{if(x.t<=t+1e-9)s=x});return s};
+function cls(S,id,t,down){const k=S.tasks.find(x=>x.asset===id);
+ if(k){if(k.start<=t&&t<k.end)return 'rep';if(t<k.end)return 'flt';return down.has(id)?'blk':'ok';}
+ return down.has(id)?'cas':'ok';}
+function graph(S,t){const down=new Set(stAt(S,t).down);
+ let s='<svg viewBox="0 0 640 400">';
+ D.harbour.edges.forEach(e=>s+=`<line class="e ${e.type==='BACKUP'?'bk':''}" x1="${X[e.to]}" y1="${Y(e.to)}" x2="${X[e.from]}" y2="${Y(e.from)}"/>`);
+ D.harbour.assets.forEach(a=>s+=`<g class="n ${cls(S,a.id,t,down)}"><circle cx="${X[a.id]}" cy="${Y(a.id)}" r="19"/><text class="id" x="${X[a.id]}" y="${Y(a.id)+5}">${a.id}</text><text class="lb" x="${X[a.id]}" y="${Y(a.id)+35}">${SH[a.id]||a.name}</text></g>`);
+ return s+'</svg>';}
+function gantt(S,t,T,n){const W=640,L=30,h=26,H=n*h+22,k=(W-L-6)/T;
+ let s=`<svg class="gt" viewBox="0 0 ${W} ${H}">`;
+ for(let c=1;c<=n;c++)s+=`<text class="lb" x="2" y="${(c-1)*h+17}">C${c}</text>`;
+ S.tasks.forEach(x=>{const px=L+x.start*k,w=(x.end-x.start)*k,y=(x.crew-1)*h;
+  s+=`<rect class="${x.wasted?'w':'r'}" x="${px}" y="${y+3}" width="${Math.max(w-1,1)}" height="${h-6}" rx="3"/><text class="bt" x="${px+4}" y="${y+17}">${w>62?(SH[x.asset]||x.asset):x.asset}</text>`});
+ const step=Math.max(1,Math.ceil(T/8));for(let q=0;q<=T;q+=step)s+=`<text class="lb" x="${L+q*k}" y="${H-3}">${q}h</text>`;
+ return s+`<line class="cur" x1="${L+t*k}" x2="${L+t*k}" y1="0" y2="${H-14}"/></svg>`;}
+function panel(i,key,S,run,t,T,pre='p'){const down=new Set(stAt(S,t).down);let c=0;down.forEach(id=>c+=A[id].crit);
+ $(pre+i).innerHTML=`<h2>${key==='BASELINE'?'Baseline: independent alerts, most damaged first':'Integrated: root cause and criticality per hour'}</h2>
+ <div class="m"><div><b>${down.size}</b><span>assets down now</span></div><div><b>${c}</b><span>criticality down now</span></div>
+ <div><b>${S.metrics.wd.toFixed(0)}</b><span>weighted downtime</span></div><div><b>${S.metrics.ttc.toFixed(1)} h</b><span>critical restored</span></div>
+ <div><b>${S.metrics.wasted.toFixed(1)} h</b><span>wasted crew-hours</span></div></div>`+graph(S,t)+gantt(S,t,T,run.crews)+
+ '<div class="note">Red bar = repair that could not restore its asset because an upstream fault was still open.</div>';}
+function delta(r,id='delta'){const b=r.strategies.BASELINE.metrics,g=r.strategies.INTEGRATED.metrics;
+ const p=(b.wd-g.wd)/b.wd*100;
+ $(id).innerHTML=`<b>${r.label}</b>, ${r.crews} crew${r.crews>1?'s':''}, faults: ${r.faults.map(i=>SH[i]||i).join(', ')}.<br>`+
+ (Math.abs(p)<.05?'Both strategies give the same weighted downtime in this run.':
+ `Weighted downtime ${b.wd.toFixed(0)} (baseline) vs ${g.wd.toFixed(0)} (integrated): <b>${p>0?'':'+'}${(-p).toFixed(1)}%</b> for integrated. `)+
+ `Wasted crew-hours ${b.wasted.toFixed(1)} vs ${g.wasted.toFixed(1)}.`;}
+function upd(){const r=cur(),T=tmax(r),t=Math.min(+$('tm').value,T);
+ $('tm').max=T;$('tl').textContent='t = '+t.toFixed(1)+' h';
+ panel(0,'BASELINE',r.strategies.BASELINE,r,t,T);panel(1,'INTEGRATED',r.strategies.INTEGRATED,r,t,T);delta(r);}
+function drawCrews(){const have=runs().map(r=>r.crews);if(!have.includes(crews))crews=have[0];
+ $('crews').innerHTML=have.map(c=>`<button class="${c===crews?'on':''}" data-c="${c}">${c}</button>`).join(' ');
+ document.querySelectorAll('#crews button').forEach(b=>b.onclick=()=>{crews=+b.dataset.c;$('tm').value=0;drawCrews();upd();});}
+$('sel').onchange=()=>{$('tm').value=0;drawCrews();upd();};
+$('tm').oninput=upd;
+$('play').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='Play';return;}
+ if(+$('tm').value>=+$('tm').max)$('tm').value=0;$('play').textContent='Pause';
+ timer=setInterval(()=>{const m=+$('tm').max,v=+$('tm').value+.25;$('tm').value=Math.min(v,m);upd();
+  if(v>=m){clearInterval(timer);timer=null;$('play').textContent='Play';}},90);};
+/* ---------- what-if (needs HarbourServer) ---------- */
+let wc=1,W=null,sel={},wtimer=null;
+function wdraw(){
+ $('wcrews').innerHTML=[1,2,3].map(c=>`<button class="${c===wc?'on':''}" data-c="${c}">${c}</button>`).join(' ');
+ document.querySelectorAll('#wcrews button').forEach(b=>b.onclick=()=>{wc=+b.dataset.c;wdraw();});
+ $('wchips').innerHTML=D.harbour.assets.map(a=>`<button class="${sel[a.id]!==undefined?'on':''}" data-id="${a.id}">${SH[a.id]||a.name}</button>`).join(' ');
+ document.querySelectorAll('#wchips button').forEach(b=>b.onclick=()=>{const id=+b.dataset.id;if(sel[id]===undefined)sel[id]=80;else delete sel[id];wdraw();});
+ $('wdmg').innerHTML=Object.keys(sel).map(id=>`<label>${SH[id]} damage <input type="number" min="1" max="100" value="${sel[id]}" data-id="${id}"></label>`).join(' ')||'<span class="note">No faults selected yet.</span>';
+ document.querySelectorAll('#wdmg input').forEach(i=>i.oninput=()=>{sel[+i.dataset.id]=+i.value;});}
+function preset(s,c){sel={};s.split(',').forEach(p=>{const[k,v]=p.split(':');sel[+k]=+v});wc=c;wdraw();}
+async function wrun(){
+ if(location.protocol==='file:'){$('wstat').textContent='Open this page through the server: http://localhost:8080/dashboard.html';return;}
+ const f=Object.keys(sel).map(id=>id+':'+sel[id]).join(',');
+ if(!f){$('wstat').textContent='Select at least one asset.';return;}
+ $('wstat').textContent='Running...';
+ try{const r=await fetch(`/api/simulate?faults=${f}&crews=${wc}`),j=await r.json();
+  if(j.error){$('wstat').textContent='Error: '+j.error;return;}
+  W=j;$('wstat').textContent='';$('wtm').value=0;wupd();
+ }catch(e){$('wstat').textContent='Server not reachable. Start HarbourServer, then open http://localhost:8080/dashboard.html';}}
+function wupd(){if(!W)return;const T=tmax(W),t=Math.min(+$('wtm').value,T);$('wtm').max=T;$('wtl').textContent='t = '+t.toFixed(1)+' h';
+ panel(0,'BASELINE',W.strategies.BASELINE,W,t,T,'w');panel(1,'INTEGRATED',W.strategies.INTEGRATED,W,t,T,'w');delta(W,'wdelta');
+ const B=W.strategies.BASELINE.metrics,R=W.strategies.RULE_ONLY.metrics,I=W.strategies.INTEGRATED.metrics;
+ $('wrule').innerHTML=`<b>Three strategies, same faults.</b> Weighted downtime: baseline ${B.wd.toFixed(0)}, rule only (no dependencies) ${R.wd.toFixed(0)}, integrated ${I.wd.toFixed(0)}. Wasted crew-hours: ${B.wasted.toFixed(1)} / ${R.wasted.toFixed(1)} / ${I.wasted.toFixed(1)}.`;
+ $('wdelta').hidden=false;$('wrule').hidden=false;}
+$('wrun').onclick=wrun;$('wtm').oninput=wupd;
+$('wpa').onclick=()=>preset('3:80,4:95',1);$('wpb').onclick=()=>preset('1:80,3:70,2:60',1);
+$('wplay').onclick=()=>{if(!W)return;if(wtimer){clearInterval(wtimer);wtimer=null;$('wplay').textContent='Play';return;}
+ if(+$('wtm').value>=+$('wtm').max)$('wtm').value=0;$('wplay').textContent='Pause';
+ wtimer=setInterval(()=>{const m=+$('wtm').max,v=+$('wtm').value+.25;$('wtm').value=Math.min(v,m);wupd();
+  if(v>=m){clearInterval(wtimer);wtimer=null;$('wplay').textContent='Play';}},90);};
+wdraw();
+drawCrews();upd();
+}
+</script></body></html>

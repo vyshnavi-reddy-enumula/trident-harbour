@@ -12,15 +12,17 @@ public class BaselineStrategy implements RecoveryStrategy {
     /**
      * Conventional dashboard rule: every fault is treated independently and the
      * most damaged asset (severity = 100 - health) is repaired first.
-     * Ignores confidence and dependencies. Ties go to the lowest id.
+     * Ignores confidence, dependencies and other crews' work (allUnrepaired).
+     * Ties go to the lowest id.
      */
     @Override
     public Optional<Integer> chooseNext(HarbourGraph graph,
-                                        Collection<Integer> failedIds,
+                                        Collection<Integer> candidates,
+                                        Collection<Integer> allUnrepaired,
                                         Map<Integer, Double> confidenceByAsset) {
         Integer best = null;
         double bestSeverity = -1.0;
-        for (int id : failedIds) {
+        for (int id : candidates) {
             double severity = Asset.MAX_HEALTH - graph.getAsset(id).getHealthScore();
             if (best == null || severity > bestSeverity || (severity == bestSeverity && id < best)) {
                 best = id;
